@@ -2,7 +2,7 @@ from datetime import datetime
 import pandas as pd
 
 class Cap(object):
-    def __init__(self, convert='USD', limit=100):
+    def __init__(self, convert='USD', limit=1000):
         self.__dataframe = None
         self.__convert = convert.upper()
         self.__limit = str(limit)

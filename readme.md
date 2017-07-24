@@ -11,3 +11,4 @@ pip install tables
 
 pip install mock
 
+mysql https://pypi.python.org/pypi/PyMySQL
