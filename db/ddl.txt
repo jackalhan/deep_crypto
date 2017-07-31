@@ -1,0 +1,84 @@
+create table currency
+(
+	symbol varchar(10) not null,
+	inserted_time datetime null,
+	id varchar(50) null,
+	name varchar(100) not null
+		primary key,
+	constraint currency_currency_id_uindex
+		unique (id),
+	constraint currency_name_uindex
+		unique (name)
+)
+;
+
+create table currency_overall_snapshot
+(
+	id bigint auto_increment
+		primary key,
+	currency_id varchar(50) null,
+	rank int null,
+	price_usd decimal(19,4) null,
+	price_btc decimal(19,4) null,
+	`24h_volume_usd` decimal(19,4) null,
+	market_cap_usd decimal(19,4) null,
+	available_supply decimal(19,4) null,
+	total_supply decimal(19,4) null,
+	percent_change_1h decimal(10,3) null,
+	percent_change_24h decimal(10,3) null,
+	percent_change_7d decimal(10,3) null,
+	inserted_time datetime null,
+	constraint currency_overall_snapshot_currency_id_fk
+		foreign key (currency_id) references hyperlite.currency (id)
+)
+;
+
+create index currency_overall_snapshot_currency_id_fk
+	on currency_overall_snapshot (currency_id)
+;
+
+create table market_stats
+(
+	id bigint auto_increment
+		primary key,
+	active_assets int null,
+	active_currencies int null,
+	active_markets int null,
+	bitcoin_percent_of_market decimal(5,2) null,
+	total_24h_volume_usd decimal(19,4) null,
+	total_market_cap_usd decimal(19,4) null,
+	inserted_time datetime null
+)
+;
+
+create table source
+(
+	id int auto_increment
+		primary key,
+	name varchar(100) null,
+	constraint source_id_uindex
+		unique (id)
+)
+;
+
+create table symbols
+(
+	pair varchar(30) null,
+	price_precision int null,
+	initial_margin int null,
+	min_margin int null,
+	max_order decimal(15,15) null,
+	min_order decimal(15,15) null,
+	expiration varchar(50) null,
+	source_id int null,
+	inserted_time datetime null,
+	updated_time datetime null,
+	constraint symbols_source_id_fk
+		foreign key (source_id) references hyperlite.source (id)
+)
+;
+
+create index symbols_source_id_fk
+	on symbols (source_id)
+;
+
