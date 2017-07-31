@@ -3,7 +3,6 @@ import pymysql.cursors
 from pymysql import Error
 
 from utility.config_parser import get_config
-from sqlalchemy import create_engine
 
 __dbconf={}
 def create():
@@ -19,9 +18,6 @@ def create():
                                password=dbconf['password'],
                                port = int(dbconf['port']),
                                autocommit=True)
-        #con_string ="mysql+mysqldb://" + dbconf['user'] + ":" +dbconf['password']+"@"+dbconf['host']+"/" +dbconf['database']
-        #engine = create_engine(con_string)
-
         print('Connected to MySQL database')
     except Error as e:
         print(e)
