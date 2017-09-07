@@ -10,6 +10,7 @@ import time
 import _thread
 import pandas as pd
 import db.connector as connector
+from stock.coinmarketcap.exchange_coins import Exchange_Coins
 from stock.coinmarketcap.exchanges import Exchanges
 
 warnings.filterwarnings("ignore")
@@ -264,9 +265,25 @@ if __name__ == '__main__':
     # ----------------------------------------
     # CODE TEST
     # ----------------------------------------
-    _exchange = Exchanges()
-    aa = _exchange.get_data()
-    print(aa.head())
+    # _exchange = Exchanges()
+    # exchange_list = _exchange.refresh()
+    # exchange_df = _exchange.get_data()
+    # print(exchange_df.head())
+    #
+    # _exchange_coins = Exchange_Coins(exchange_list)
+    # exchange_coin_list = _exchange_coins.refresh()
+    # exchange_coin_df = _exchange_coins.get_data()
+    # print(exchange_coin_df.head())
+
+    market_cap = mc.Cap()
+    data_cap = market_cap.get_data()
+
+    print(data_cap.head())
+
+    market_obj = market.Markets(data_cap.id.values, limit=3)
+    markets, coins_summary = market_obj.get_data()
+    print(markets.head())
+    print(coins_summary.head())
     # while True:
     #     iteration_start = get_time()
     #     print('*' * 50)

@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 import requests
 
+
 class Exchanges(object):
     def __init__(self):
         self.__lxml = 'lxml'
@@ -14,7 +15,11 @@ class Exchanges(object):
         self.__soup = None
         self.__rows = []
         self.__url = "https://coinmarketcap.com/exchanges/volume/24-hour/"
-        self.parse_data()
+
+
+    def refresh(self):
+        return self.parse_data()
+
     def parse_data(self):
         self.__page = requests.get(self.__url)
         self.__soup = BeautifulSoup(self.__page.content, self.__parser)
@@ -24,9 +29,9 @@ class Exchanges(object):
         for _ in exchange_table_part:
             _childsoup = BeautifulSoup(str(_), self.__lxml)
             a_part = _childsoup.find_all('a')
-            exchange_id = [_item for _item in a_part[0]['href'].split('/') if _item != ''] [1]
+            exchange_id = [_item for _item in a_part[0]['href'].split('/') if _item != ''][1]
             exchange_name = a_part[0].text
-            self.__rows.append((exchange_id, exchange_name, self.__insertion_time, ))
+            self.__rows.append((exchange_id, exchange_name, self.__insertion_time,))
 
         return self.__rows
 
