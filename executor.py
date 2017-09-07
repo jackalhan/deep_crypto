@@ -6,12 +6,16 @@ import warnings
 import stock.coinmarketcap.gainers_losers as gl
 import stock.coinmarketcap.stats as ms
 import stock.coinmarketcap.cap as mc
+import stock.coinmarketcap.markets_coins as mar_coins
 import time
 import _thread
 import pandas as pd
 import db.connector as connector
 from stock.coinmarketcap.exchange_coins import Exchange_Coins
 from stock.coinmarketcap.exchanges import Exchanges
+import stock.coinmarketcap.markets as market
+from utility.config_parser import get_config
+
 
 warnings.filterwarnings("ignore")
 # locale.setlocale( locale.LC_ALL, '' )
@@ -25,8 +29,7 @@ warnings.filterwarnings("ignore")
 # -------------------------------------------------------
 #  MARKET CAP
 # -------------------------------------------------------
-import stock.coinmarketcap.markets as market
-from utility.config_parser import get_config
+
 
 
 # market_cap = mc.Cap()
@@ -275,15 +278,32 @@ if __name__ == '__main__':
     # exchange_coin_df = _exchange_coins.get_data()
     # print(exchange_coin_df.head())
 
+    # --------------------------------------------------------------------
+    # COLLECT ALL COINS AND THEIR GENERAL STATISTICS
+    # --------------------------------------------------------------------
     market_cap = mc.Cap()
     data_cap = market_cap.get_data()
 
-    print(data_cap.head())
+    # print(data_cap.head())
 
+    # --------------------------------------------------------------------
+    # COLLECT MARKETS INFO FOR EACH COIN
+    # --------------------------------------------------------------------
     market_obj = market.Markets(data_cap.id.values, limit=3)
     markets, coins_summary = market_obj.get_data()
+    # print(markets.head())
+    # print(coins_summary.head())
+
+    # --------------------------------------------------------------------
+    # COLLECT MARKETS INFO FOR EACH COIN
+    # --------------------------------------------------------------------
+    distinct_market_set = set(markets.Market.values)
+    market_coins_obj = mar_coins.Markets_Coins(distinct_market_set)
+    coins, market_summary = market_coins_obj.get_data()
     print(markets.head())
     print(coins_summary.head())
+
+
     # while True:
     #     iteration_start = get_time()
     #     print('*' * 50)

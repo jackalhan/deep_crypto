@@ -67,7 +67,7 @@ class Markets(object):
             market_cap_amounts = header_part[0].text.strip().split('\n')
             market_cap_usd = Decimal(sub(r'[^\d.]', '', market_cap_amounts[0])).__float__()
             market_cap_btc = Decimal(sub(r'[^\d.]', '', market_cap_amounts[1])).__float__()
-        except:
+        except Exception as e:
             market_cap_usd = 0
             market_cap_btc = 0
 
@@ -75,20 +75,20 @@ class Markets(object):
             volume_amounts = header_part[1].text.strip().split('\n')
             volume_usd = Decimal(sub(r'[^\d.]', '', volume_amounts[0])).__float__()
             volume_btc = Decimal(sub(r'[^\d.]', '', volume_amounts[1])).__float__()
-        except:
+        except Exception as e:
             volume_usd = 0
             volume_btc = 0
 
         try:
             circulating_supply_amounts = header_part[2].text.strip().split('\n')
             native_circulating_supply = Decimal(sub(r'[^\d.]', '', circulating_supply_amounts[0])).__float__()
-        except:
+        except Exception as e:
             native_circulating_supply = 0
 
         try:
             max_supply_amounts = header_part[3].text.strip().split('\n')
             native_max_supply = Decimal(sub(r'[^\d.]', '', max_supply_amounts[0])).__float__()
-        except:
+        except Exception as e:
             native_max_supply = 0
 
         self.__coin_summary_rows.append((
@@ -113,7 +113,11 @@ class Markets(object):
             soup_market_name_part = BeautifulSoup(market_name_part, self.__lxml)
             market_name = soup_market_name_part.a.string
             market_post_url = soup_market_name_part.a['href']
+            market_id = [_item for _item in market_post_url.split('/') if _item != ''][1]
             market_link = self.__baseurl + market_post_url
+
+
+
 
             pair_part = str(market_part[2])
             soup_pair_part = BeautifulSoup(pair_part, self.__lxml)
@@ -144,7 +148,7 @@ class Markets(object):
             if volume_string.startswith(_star) or price_string.startswith(_star):
                 continue
 
-            self.__rows.append((currency_id, market_name, pair_symbol, coin1, coin2, volume_btc, volume_native,
+            self.__rows.append((currency_id, market_id, pair_symbol, coin1, coin2, volume_btc, volume_native,
                                 volume_usd, price_btc, price_native, price_usd, volume_percent, self.__insertion_time,
                                 market_link))
 
