@@ -1,30 +1,19 @@
+from datetime import datetime
 import locale
-
 import sys
 import warnings
-
-import stock.coinmarketcap.gainers_losers as gl
-import stock.coinmarketcap.stats as ms
-import stock.coinmarketcap.cap as mc
-import stock.coinmarketcap.markets_coins as mar_coins
+import stock.coinmarketcap.stats as market_stats
+import stock.coinmarketcap.cap as market_cap
+import stock.coinmarketcap.markets as markets
+import stock.coinmarketcap.markets_coins as market_coins
 import time
 import _thread
 import pandas as pd
 import db.connector as connector
-from stock.coinmarketcap.exchange_coins import Exchange_Coins
-from stock.coinmarketcap.exchanges import Exchanges
-import stock.coinmarketcap.markets as market
 from utility.config_parser import get_config
-
-
 warnings.filterwarnings("ignore")
 # locale.setlocale( locale.LC_ALL, '' )
 # locale.currency( 188518982.18, grouping=True )
-
-# SOURCES
-# 1 bitfinex
-# 2,poloniex
-# 3,coinmarketcap
 
 # -------------------------------------------------------
 #  MARKET CAP
@@ -78,8 +67,8 @@ def sync_currecies():
     # --------------------------------------------------------------------
     # COLLECT ALL COINS AND THEIR GENERAL STATISTICS
     # --------------------------------------------------------------------
-    market_cap = mc.Cap()
-    data_cap = market_cap.get_data()
+    mc = market_cap.Cap()
+    data_cap = mc.get_data()
 
     # --------------------------------------------------------------------
     # FILTER OUT INVALUABLE COINS FROM THE LIST SO THAT WE CAN FOCUS ON VALUABLE ONES.
@@ -140,8 +129,8 @@ def get_currencies():
     # --------------------------------------------------------------------
     # COLLECT ALL COINS AND THEIR GENERAL STATISTICS
     # --------------------------------------------------------------------
-    market_cap = mc.Cap()
-    data_cap = market_cap.get_data()
+    mc = market_cap.Cap()
+    data_cap = mc.get_data()
     data_cap.set_index(['id'], inplace=True)
 
     # --------------------------------------------------------------------
@@ -215,8 +204,8 @@ def insert_market_stats():
     # --------------------------------------------------------------------
     # NEW MARKET STATS ARE BEING WRITTEN INTO TABLE
     # --------------------------------------------------------------------
-    market_stats = ms.Stats()
-    data_stats = market_stats.get_data()
+    ms = market_stats.Stats()
+    data_stats = ms.get_data()
     print('Market stats are going to be written in market_stats table')
     for _index, _row in data_stats.iterrows():
         values = "'" + str(_row['insertion_time']) + "'," \
@@ -236,32 +225,10 @@ def insert_market_stats():
     # --------------------------------------------------------------------
     connector.disconnect(con)
 
-
-# Define a function for the thread
-def print_time(threadName, delay):
-    count = 0
-    while count < 5:
-        time.sleep(delay)
-        count += 1
-        print("%s: %s" % (threadName, time.ctime(time.time())))
-
-
-def get_time():
-    if sys.platform == 'win32':
-        default_timer = time.clock()
-    else:
-        default_timer = time.time()
-    return default_timer
-
-def convert_timer_to_readable(time):
-    hours, rem = divmod(time, 3600)
-    minutes, seconds = divmod(rem, 60)
-    return  "{:0>2}:{:0>2}:{:05.2f}".format(int(hours),int(minutes),seconds)
-
 if __name__ == '__main__':
     socket_generic_arguments_dict = get_config(config_type='stock', section='generic-arguments')
     currency_update_interval = eval(socket_generic_arguments_dict['currency_update_interval'])
-    print('Application is started on', time.time())
+    print('Application is started on', str(datetime.now()))
     iteration = 0
 
 
@@ -281,27 +248,26 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------
     # COLLECT ALL COINS AND THEIR GENERAL STATISTICS
     # --------------------------------------------------------------------
-    market_cap = mc.Cap()
-    data_cap = market_cap.get_data()
-
+    mc = market_cap.Cap()
+    mc_data = mc.get_data()
     # print(data_cap.head())
 
     # --------------------------------------------------------------------
     # COLLECT MARKETS INFO FOR EACH COIN
     # --------------------------------------------------------------------
-    market_obj = market.Markets(data_cap.id.values, limit=3)
-    markets, coins_summary = market_obj.get_data()
+    m = markets.Markets(mc_data.id.values, limit=3)
+    m_data, m_coins_summary = m.get_data()
     # print(markets.head())
     # print(coins_summary.head())
 
     # --------------------------------------------------------------------
-    # COLLECT MARKETS INFO FOR EACH COIN
+    # COLLECT COINS FOR EACH MARKET
     # --------------------------------------------------------------------
-    distinct_market_set = set(markets.Market.values)
-    market_coins_obj = mar_coins.Markets_Coins(distinct_market_set)
-    coins, market_summary = market_coins_obj.get_data()
-    print(markets.head())
-    print(coins_summary.head())
+    distinct_m_dataset = set(m_data.Market_Id.values)
+    m_coin = market_coins.Markets_Coins(distinct_m_dataset)
+    m_coins, m_market_summary = m_coin.get_data()
+    print(m_coins.head())
+    print(m_market_summary.head())
 
 
     # while True:

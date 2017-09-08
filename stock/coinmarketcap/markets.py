@@ -12,7 +12,7 @@ class Markets(object):
         self.__insertion_time = None
         self.__limit = limit
         self.__dataframe = None
-        self.__dataframe_columns = ['Currency', 'Market', 'Pair', 'Coin_1', 'Coin_2', 'Volume_BTC', 'Volume_Native',
+        self.__dataframe_columns = ['Currency', 'Market_Id', 'Market_Name', 'Pair', 'Coin_1', 'Coin_2', 'Volume_BTC', 'Volume_Native',
                                     'Volume_USD', 'Price_BTC', 'Price_Native', 'Price_USD', 'Volume_Percent',
                                     'Insertion_Time', 'Link']
         self.__page = None
@@ -33,7 +33,7 @@ class Markets(object):
         len_currency_id_list = len(self.__currency_id_list)
         global_index = 0
         old_percent = 0
-
+        print('Markets are getting parsed')
         if self.__limit is None:
             self.__limit = len_currency_id_list
         for _ in self.__currency_id_list:
@@ -47,15 +47,15 @@ class Markets(object):
                 self.parse_coin_summary(_currency_id)
                 print(10 * '*')
                 print(_currency_id, 'is collected')
-                print(10 * '*')
-                percent = round(((global_index + 1) / len_currency_id_list) * 100)
-                if old_percent != percent:
-                    print(str(percent), '% of data processed')
-                    old_percent = percent
             else:
                 break
+            percent = round(((global_index + 1) / len_currency_id_list) * 100)
+            if old_percent != percent:
+                print(str(percent), '% of data processed')
+                old_percent = percent
 
             global_index += 1
+        print('Parsing markets are done')
 
         return self.__rows, self.__coin_summary_rows
 
@@ -117,8 +117,6 @@ class Markets(object):
             market_link = self.__baseurl + market_post_url
 
 
-
-
             pair_part = str(market_part[2])
             soup_pair_part = BeautifulSoup(pair_part, self.__lxml)
             pair_symbol = soup_pair_part.a.string
@@ -148,7 +146,7 @@ class Markets(object):
             if volume_string.startswith(_star) or price_string.startswith(_star):
                 continue
 
-            self.__rows.append((currency_id, market_id, pair_symbol, coin1, coin2, volume_btc, volume_native,
+            self.__rows.append((currency_id, market_id, market_name, pair_symbol, coin1, coin2, volume_btc, volume_native,
                                 volume_usd, price_btc, price_native, price_usd, volume_percent, self.__insertion_time,
                                 market_link))
 

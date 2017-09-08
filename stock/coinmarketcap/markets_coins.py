@@ -20,7 +20,7 @@ class Markets_Coins(object):
         self.__rows = []
         self.__market_summary_rows = []
         self.__dataframe_coin_summary = None
-        self.__dataframe_coin_summary_columns = ['Market', 'All_Cap_USD', 'All_Cap_BTC','Insertion_Time']
+        self.__dataframe_coin_summary_columns = ['Market', 'All_Cap_USD', 'All_Cap_BTC', 'Insertion_Time']
         self.__replacement_word = "#market_id#"
         self.__market_id_list = market_id_list
         self.__baseurl = "https://coinmarketcap.com"
@@ -31,7 +31,7 @@ class Markets_Coins(object):
         len_currency_id_list = len(self.__market_id_list)
         global_index = 0
         old_percent = 0
-
+        print('Markets-Coins are getting parsed')
         for _ in self.__market_id_list:
             _market_id = _
             url = self.__url.replace(self.__replacement_word, _market_id)
@@ -41,12 +41,11 @@ class Markets_Coins(object):
             self.parse_coins_from_market(_market_id)
             print(10 * '*')
             print(_market_id, 'is collected')
-            print(10 * '*')
             percent = round(((global_index + 1) / len_currency_id_list) * 100)
             if old_percent != percent:
                 print(str(percent), '% of data processed')
                 old_percent = percent
-
+        print('Markets-Coins are getting done')
 
         return self.__rows, self.__market_summary_rows
 
@@ -63,56 +62,61 @@ class Markets_Coins(object):
             market_cap_btc = 0
 
         self.__market_summary_rows.append((
-            market_id, market_cap_usd, market_cap_btc,self.__insertion_time))
+            market_id, market_cap_usd, market_cap_btc, self.__insertion_time))
 
         return self.__market_summary_rows
 
     def parse_coins_from_market(self, market_id):
 
-        first_part = str(self.__soup.find_all("table", {"class":"table no-border table-condensed"})[0])
+        first_part = str(self.__soup.find_all("table", {"class": "table no-border table-condensed"})[0])
         soup_part = BeautifulSoup(first_part, self.__lxml)
         third_part = soup_part.find_all("tr")
         _star = '*'
+        _counter = 0
         for _ in third_part:
-            _childsoup = BeautifulSoup(str(_), self.__lxml)
-            market_part = _childsoup.find_all("td")
+            if _counter > 0:
+                _childsoup = BeautifulSoup(str(_), self.__lxml)
+                market_part = _childsoup.find_all("td")
 
-            market_name_part = str(market_part[1])
-            soup_market_name_part = BeautifulSoup(market_name_part, self.__lxml)
-            coin_post_url = soup_market_name_part.a['href']
-            coin_id = [_item for _item in coin_post_url.split('/') if _item != ''][1]
+                market_name_part = str(market_part[1])
+                soup_market_name_part = BeautifulSoup(market_name_part, self.__lxml)
+                coin_post_url = soup_market_name_part.a['href']
+                coin_id = [_item for _item in coin_post_url.split('/') if _item != ''][1]
 
-            pair_part = str(market_part[2])
-            soup_pair_part = BeautifulSoup(pair_part, self.__lxml)
-            pair_symbol = soup_pair_part.a.string
-            pair_splitted = pair_symbol.split('/')
-            coin1 = pair_splitted[0]
-            coin2 = pair_splitted[1]
+                pair_part = str(market_part[2])
+                soup_pair_part = BeautifulSoup(pair_part, self.__lxml)
+                pair_symbol = soup_pair_part.a.string
+                pair_splitted = pair_symbol.split('/')
+                coin1 = pair_splitted[0]
+                coin2 = pair_splitted[1]
 
-            volume_part = str(market_part[3])
-            soup_volume_part = BeautifulSoup(volume_part, self.__lxml)
-            volume_btc = soup_volume_part.span['data-btc']
-            volume_native = soup_volume_part.span['data-native']
-            volume_usd = soup_volume_part.span['data-usd']
-            volume_string = soup_volume_part.span.string.strip()
+                volume_part = str(market_part[3])
+                soup_volume_part = BeautifulSoup(volume_part, self.__lxml)
+                volume_btc = soup_volume_part.td['data-btc']
+                volume_native = soup_volume_part.td['data-native']
+                volume_usd = soup_volume_part.td['data-usd']
+                volume_string = soup_volume_part.td.string.strip()
 
-            price_part = str(market_part[4])
-            soup_price_part = BeautifulSoup(price_part, self.__lxml)
-            price_btc = soup_price_part.span['data-btc']
-            price_native = soup_price_part.span['data-native']
-            price_usd = soup_price_part.span['data-usd']
-            price_string = soup_price_part.span.string.strip()
+                price_part = str(market_part[4])
+                soup_price_part = BeautifulSoup(price_part, self.__lxml)
+                price_btc = soup_price_part.td['data-btc']
+                price_native = soup_price_part.td['data-native']
+                price_usd = soup_price_part.td['data-usd']
+                price_string = soup_price_part.td.string.strip()
 
-            volume_percent_part = str(market_part[5])
-            soup_volume_percent_part = BeautifulSoup(volume_percent_part, self.__lxml)
-            volume_percent = soup_volume_percent_part.td.string
-            volume_percent = volume_percent.replace('%', '')
+                volume_percent_part = str(market_part[5])
+                soup_volume_percent_part = BeautifulSoup(volume_percent_part, self.__lxml)
+                volume_percent = soup_volume_percent_part.td.string
+                volume_percent = volume_percent.replace('%', '')
 
-            if volume_string.startswith(_star) or price_string.startswith(_star):
-                continue
+                if volume_string.startswith(_star) or price_string.startswith(_star):
+                    continue
 
-            self.__rows.append((market_id,  coin_id,pair_symbol, coin1, coin2, volume_btc, volume_native,
-                                volume_usd, price_btc, price_native, price_usd, volume_percent, self.__insertion_time))
+                self.__rows.append((market_id, coin_id, pair_symbol, coin1, coin2, volume_btc, volume_native,
+                                    volume_usd, price_btc, price_native, price_usd, volume_percent,
+                                    self.__insertion_time))
+
+            _counter += 1
 
         return self.__rows
 
