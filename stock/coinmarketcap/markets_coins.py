@@ -7,10 +7,11 @@ from decimal import Decimal
 
 
 class Markets_Coins(object):
-    def __init__(self, market_id_list):
+    def __init__(self, market_id_list, limit=None):
         self.__lxml = 'lxml'
         self.__insertion_time = None
         self.__dataframe = None
+        self.__limit = limit
         self.__dataframe_columns = ['Market', 'Currency', 'Pair', 'Coin_1', 'Coin_2', 'Volume_BTC', 'Volume_Native',
                                     'Volume_USD', 'Price_BTC', 'Price_Native', 'Price_USD', 'Volume_Percent',
                                     'Insertion_Time']
@@ -28,10 +29,13 @@ class Markets_Coins(object):
 
     def refresh(self):
         self.__insertion_time = datetime.now()
-        len_currency_id_list = len(self.__market_id_list)
+
         global_index = 0
         old_percent = 0
-        print('Markets-Coins are getting parsed')
+        print(10*'-', 'Markets-Coins are getting parsed', 10*'-')
+        if self.__limit is not None:
+            self.__market_id_list = self.__market_id_list[:self.__limit]
+        len_currency_id_list = len(self.__market_id_list)
         for _ in self.__market_id_list:
             _market_id = _
             url = self.__url.replace(self.__replacement_word, _market_id)
@@ -45,7 +49,8 @@ class Markets_Coins(object):
             if old_percent != percent:
                 print(str(percent), '% of data processed')
                 old_percent = percent
-        print('Markets-Coins are getting done')
+            global_index += 1
+        print(10 * '-', 'Markets-Coins are done', 10 * '-')
 
         return self.__rows, self.__market_summary_rows
 
@@ -92,16 +97,16 @@ class Markets_Coins(object):
 
                 volume_part = str(market_part[3])
                 soup_volume_part = BeautifulSoup(volume_part, self.__lxml)
-                volume_btc = soup_volume_part.td['data-btc']
-                volume_native = soup_volume_part.td['data-native']
-                volume_usd = soup_volume_part.td['data-usd']
+                volume_btc = soup_volume_part.td['data-btc'].replace('?','0.0')
+                volume_native = soup_volume_part.td['data-native'].replace('?','0.0')
+                volume_usd = soup_volume_part.td['data-usd'].replace('?','0.0')
                 volume_string = soup_volume_part.td.string.strip()
 
                 price_part = str(market_part[4])
                 soup_price_part = BeautifulSoup(price_part, self.__lxml)
-                price_btc = soup_price_part.td['data-btc']
-                price_native = soup_price_part.td['data-native']
-                price_usd = soup_price_part.td['data-usd']
+                price_btc = soup_price_part.td['data-btc'].replace('?','0.0')
+                price_native = soup_price_part.td['data-native'].replace('?','0.0')
+                price_usd = soup_price_part.td['data-usd'].replace('?','0.0')
                 price_string = soup_price_part.td.string.strip()
 
                 volume_percent_part = str(market_part[5])
@@ -125,4 +130,15 @@ class Markets_Coins(object):
         self.__dataframe = pd.DataFrame(data=self.__rows, columns=self.__dataframe_columns)
         self.__dataframe_coin_summary = pd.DataFrame(data=self.__market_summary_rows,
                                                      columns=self.__dataframe_coin_summary_columns)
+        self.__dataframe['Volume_BTC'] = self.__dataframe.Volume_BTC.astype(float)
+        self.__dataframe['Volume_Native'] = self.__dataframe.Volume_Native.astype(float)
+        self.__dataframe['Volume_USD'] = self.__dataframe.Volume_USD.astype(float)
+        self.__dataframe['Price_BTC'] = self.__dataframe.Price_BTC.astype(float)
+        self.__dataframe['Price_Native'] = self.__dataframe.Price_Native.astype(float)
+        self.__dataframe['Price_USD'] = self.__dataframe.Price_USD.astype(float)
+        self.__dataframe['Volume_Percent'] = self.__dataframe.Volume_Percent.astype(float)
+
+        self.__dataframe_coin_summary['All_Cap_USD'] = self.__dataframe_coin_summary.All_Cap_USD.astype(float)
+        self.__dataframe_coin_summary['All_Cap_BTC'] = self.__dataframe_coin_summary.All_Cap_BTC.astype(float)
+
         return self.__dataframe, self.__dataframe_coin_summary

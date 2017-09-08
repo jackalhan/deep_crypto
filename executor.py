@@ -11,7 +11,10 @@ import _thread
 import pandas as pd
 import db.connector as connector
 from utility.config_parser import get_config
+
 warnings.filterwarnings("ignore")
+
+
 # locale.setlocale( locale.LC_ALL, '' )
 # locale.currency( 188518982.18, grouping=True )
 
@@ -191,6 +194,7 @@ def insert_currencies_overall_snapshot(data_cap, len_data_cap):
     # --------------------------------------------------------------------
     connector.disconnect(con)
 
+
 # --------------------------------------------------------------------
 # INSERT CURRENCY OVERALL SNAPSHOT TO OUR DB
 # --------------------------------------------------------------------
@@ -219,18 +223,17 @@ def insert_market_stats():
             "INSERT INTO market_stats (inserted_time,active_assets, active_currencies, active_markets, bitcoin_percent_of_market, total_24h_volume_usd,total_market_cap_usd) VALUES (" + values + ")")
     print('Currency snapshot are inserted to table')
 
-
     # --------------------------------------------------------------------
     # CONNECTION DISCONNECTED
     # --------------------------------------------------------------------
     connector.disconnect(con)
+
 
 if __name__ == '__main__':
     socket_generic_arguments_dict = get_config(config_type='stock', section='generic-arguments')
     currency_update_interval = eval(socket_generic_arguments_dict['currency_update_interval'])
     print('Application is started on', str(datetime.now()))
     iteration = 0
-
 
     # ----------------------------------------
     # CODE TEST
@@ -248,92 +251,123 @@ if __name__ == '__main__':
     # --------------------------------------------------------------------
     # COLLECT ALL COINS AND THEIR GENERAL STATISTICS
     # --------------------------------------------------------------------
-    mc = market_cap.Cap()
-    mc_data = mc.get_data()
-    # print(data_cap.head())
+    coins = market_cap.Cap()
+    coins_data = coins.get_data()
+    # print(coins_data.head())
 
     # --------------------------------------------------------------------
     # COLLECT MARKETS INFO FOR EACH COIN
     # --------------------------------------------------------------------
-    m = markets.Markets(mc_data.id.values, limit=3)
-    m_data, m_coins_summary = m.get_data()
-    # print(markets.head())
-    # print(coins_summary.head())
+    mrkts = markets.Markets()
+    markets_data = mrkts.get_data()
+    # print(markets_data)
 
     # --------------------------------------------------------------------
     # COLLECT COINS FOR EACH MARKET
     # --------------------------------------------------------------------
-    distinct_m_dataset = set(m_data.Market_Id.values)
-    m_coin = market_coins.Markets_Coins(distinct_m_dataset)
+    m_coin = market_coins.Markets_Coins(markets_data.Id.values, limit=3)
     m_coins, m_market_summary = m_coin.get_data()
-    print(m_coins.head())
-    print(m_market_summary.head())
+    # print(m_coins.head())
+    # print(m_market_summary.head())
+
+    # --------------------------------------------------------------------
+    # Iterate through each market-coin to create our ultimate datasets
+    # --------------------------------------------------------------------
+    grouped_market_coins = m_coins.groupby(['Market', 'Currency'])
+    grouped_market = m_coins.groupby('Market')['Volume_BTC', 'Volume_Native', 'Volume_USD'].agg('sum')
+    size_of_grouped_market_coins = len(grouped_market_coins)
+    global_index = 0
+    old_percent = 0
+    for _index, _row in grouped_market_coins:
+        print(_index)
+        print(_row)
+
+        # Iterate through same coins exist in this market
+        total_usd_volume_of_coin = 0
+        total_btc_volume_of_coin = 0
+        total_native_volume_of_coin = 0
+        for _sub_index in range(0, len(_row)):
+            total_usd_volume_of_coin = total_usd_volume_of_coin + _row.Volume_USD.values[_sub_index]
+            total_btc_volume_of_coin = total_btc_volume_of_coin + _row.Volume_BTC.values[_sub_index]
+            total_native_volume_of_coin = total_native_volume_of_coin + _row.Volume_Native.values[_sub_index]
+
+        #TODO: Compare total volumes with the result of m_market_summary
 
 
-    # while True:
-    #     iteration_start = get_time()
-    #     print('*' * 50)
-    #     print('*' * 25)
-    #     print('Iteration', str(iteration), 'is started on',convert_timer_to_readable(iteration_start) )
-    #     print('*' * 25)
-    #     print('*' * 50)
-    #
-    #     # -------------------------------------------------------------------------------------------
-    #     # INSERT MARKET STATS
-    #     # -------------------------------------------------------------------------------------------
-    #     insert_marketstats_start = get_time()
-    #     print('-' * 50)
-    #     print('Iteration', str(iteration), 'insert market stats is started on',
-    #           convert_timer_to_readable(insert_marketstats_start))
-    #     insert_market_stats()
-    #     insert_marketstats_end = get_time()
-    #     print('Iteration', str(iteration), 'insert market stats is ended on',
-    #           convert_timer_to_readable(insert_marketstats_end), 'process took',
-    #           str(insert_marketstats_end - insert_marketstats_start), 'seconds.')
-    #
-    #     #-------------------------------------------------------------------------------------------
-    #     # SYNC CURRENCIES
-    #     # -------------------------------------------------------------------------------------------
-    #     sync_currecies_start = get_time()
-    #     print('-'*50)
-    #     print('Iteration', str(iteration), 'sync currencies is started on', convert_timer_to_readable(sync_currecies_start))
-    #     sync_currecies()
-    #     sync_currecies_end = get_time()
-    #     print('Iteration', str(iteration), 'sync currencies is ended on', convert_timer_to_readable(sync_currecies_end), 'process took',str(sync_currecies_end - sync_currecies_start), 'seconds.')
-    #
-    #     # -------------------------------------------------------------------------------------------
-    #     # GET CURRENCIES
-    #     # -------------------------------------------------------------------------------------------
-    #     get_currecies_start = get_time()
-    #     print('-' * 50)
-    #     print('Iteration', str(iteration), 'get currencies is started on', convert_timer_to_readable(get_currecies_start))
-    #     data_cap, len_data_cap = get_currencies()
-    #     get_currecies_end = get_time()
-    #     print('Iteration', str(iteration), 'get currencies is ended on', convert_timer_to_readable(get_currecies_end), 'process took',
-    #           str(get_currecies_end - get_currecies_start), 'seconds.')
-    #
-    #     # -------------------------------------------------------------------------------------------
-    #     # INSERT CURRENCIES
-    #     # -------------------------------------------------------------------------------------------
-    #     insert_currecies_start = get_time()
-    #     print('-' * 50)
-    #     print('Iteration', str(iteration), 'insert currencies is started on', convert_timer_to_readable(insert_currecies_start))
-    #     insert_currencies_overall_snapshot(data_cap, len_data_cap)
-    #     insert_currecies_end = get_time()
-    #     print('Iteration', str(iteration), 'insert currencies is ended on', convert_timer_to_readable(insert_currecies_end), 'process took',
-    #           str(insert_currecies_end - insert_currecies_start), 'seconds.')
-    #
-    #     # -------------------------------------------------------------------------------------------
-    #     # CURRENCY MARKET
-    #     # -------------------------------------------------------------------------------------------
-    #
-    #     # -------------------------------------------------------------------------------------------
-    #     # CURRENCY PRICE
-    #     # -------------------------------------------------------------------------------------------
-    #
-    #     iteration_end = get_time()
-    #     print('Iteration', str(iteration), 'is ended on', convert_timer_to_readable(iteration_end))
-    #     print('Iteration', str(iteration), 'took', str(iteration_end - iteration_start))
-    #     time.sleep(currency_update_interval)
-    #     iteration += 1
-    #
+        percent = round(((global_index + 1) / size_of_grouped_market_coins) * 100)
+        if old_percent != percent:
+            print("{} % of data processed".format(str(percent)))
+            old_percent = percent
+
+        global_index += 1
+
+
+
+
+        # while True:
+        #     iteration_start = get_time()
+        #     print('*' * 50)
+        #     print('*' * 25)
+        #     print('Iteration', str(iteration), 'is started on',convert_timer_to_readable(iteration_start) )
+        #     print('*' * 25)
+        #     print('*' * 50)
+        #
+        #     # -------------------------------------------------------------------------------------------
+        #     # INSERT MARKET STATS
+        #     # -------------------------------------------------------------------------------------------
+        #     insert_marketstats_start = get_time()
+        #     print('-' * 50)
+        #     print('Iteration', str(iteration), 'insert market stats is started on',
+        #           convert_timer_to_readable(insert_marketstats_start))
+        #     insert_market_stats()
+        #     insert_marketstats_end = get_time()
+        #     print('Iteration', str(iteration), 'insert market stats is ended on',
+        #           convert_timer_to_readable(insert_marketstats_end), 'process took',
+        #           str(insert_marketstats_end - insert_marketstats_start), 'seconds.')
+        #
+        #     #-------------------------------------------------------------------------------------------
+        #     # SYNC CURRENCIES
+        #     # -------------------------------------------------------------------------------------------
+        #     sync_currecies_start = get_time()
+        #     print('-'*50)
+        #     print('Iteration', str(iteration), 'sync currencies is started on', convert_timer_to_readable(sync_currecies_start))
+        #     sync_currecies()
+        #     sync_currecies_end = get_time()
+        #     print('Iteration', str(iteration), 'sync currencies is ended on', convert_timer_to_readable(sync_currecies_end), 'process took',str(sync_currecies_end - sync_currecies_start), 'seconds.')
+        #
+        #     # -------------------------------------------------------------------------------------------
+        #     # GET CURRENCIES
+        #     # -------------------------------------------------------------------------------------------
+        #     get_currecies_start = get_time()
+        #     print('-' * 50)
+        #     print('Iteration', str(iteration), 'get currencies is started on', convert_timer_to_readable(get_currecies_start))
+        #     data_cap, len_data_cap = get_currencies()
+        #     get_currecies_end = get_time()
+        #     print('Iteration', str(iteration), 'get currencies is ended on', convert_timer_to_readable(get_currecies_end), 'process took',
+        #           str(get_currecies_end - get_currecies_start), 'seconds.')
+        #
+        #     # -------------------------------------------------------------------------------------------
+        #     # INSERT CURRENCIES
+        #     # -------------------------------------------------------------------------------------------
+        #     insert_currecies_start = get_time()
+        #     print('-' * 50)
+        #     print('Iteration', str(iteration), 'insert currencies is started on', convert_timer_to_readable(insert_currecies_start))
+        #     insert_currencies_overall_snapshot(data_cap, len_data_cap)
+        #     insert_currecies_end = get_time()
+        #     print('Iteration', str(iteration), 'insert currencies is ended on', convert_timer_to_readable(insert_currecies_end), 'process took',
+        #           str(insert_currecies_end - insert_currecies_start), 'seconds.')
+        #
+        #     # -------------------------------------------------------------------------------------------
+        #     # CURRENCY MARKET
+        #     # -------------------------------------------------------------------------------------------
+        #
+        #     # -------------------------------------------------------------------------------------------
+        #     # CURRENCY PRICE
+        #     # -------------------------------------------------------------------------------------------
+        #
+        #     iteration_end = get_time()
+        #     print('Iteration', str(iteration), 'is ended on', convert_timer_to_readable(iteration_end))
+        #     print('Iteration', str(iteration), 'took', str(iteration_end - iteration_start))
+        #     time.sleep(currency_update_interval)
+        #     iteration += 1
+        #
